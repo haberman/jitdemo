@@ -1,5 +1,5 @@
 
-CFLAGS=-O3 -g
+CFLAGS=-O3 -g -std=gnu99
 
 all: jit1 jit2 jit3
 

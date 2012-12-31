@@ -1,5 +1,7 @@
 // JIT for Brainf*ck.
 
+#include <stdint.h>
+
 |.arch x64
 |.actionlist actions
 |
@@ -7,6 +9,16 @@
 |// Since rbx is a callee-save register, it will be preserved
 |// across our calls to getchar and putchar.
 |.define PTR, rbx
+|
+|// Macro for calling a function.
+|// In cases where our target is <=2**32 away we can use
+|//   | call &addr
+|// But since we don't know if it will be, we use this safe
+|// sequence instead.
+|.macro callp, addr
+|  mov64  rax, (uintptr_t)addr
+|  call   rax
+|.endmacro
 
 #define Dst &state
 #define MAX_NESTING 256
@@ -26,31 +38,31 @@ int main(int argc, char *argv[]) {
   int *top = pcstack, *limit = pcstack + MAX_NESTING;
 
   // Function prologue.
-  |  push rbp
-  |  mov  rbp, rsp
   |  push PTR
   |  mov  PTR, rdi
 
   for (char *p = argv[1]; *p; p++) {
     switch (*p) {
       case '>':
-        |  add  PTR, 1
+        |  inc  PTR
         break;
       case '<':
-        |  sub  PTR, 1
+        |  dec  PTR
         break;
       case '+':
-        |  add  byte [PTR], 1
+        |  inc  byte [PTR]
         break;
       case '-':
-        |  sub  byte [PTR], 1
+        |  dec  byte [PTR]
         break;
       case '.':
-        |  movzx esi, byte [PTR]
-        |  call  &putchar
+        |  movzx edi, byte [PTR]
+        |  mov64 rax, (uintptr_t)putchar
+        |  call  rax
         break;
       case ',':
-        |  call &getchar
+        |  mov64 rax, (uintptr_t)getchar
+        |  call  rax
         |  mov  byte [PTR], al
         break;
       case '[':
@@ -64,21 +76,22 @@ int main(int argc, char *argv[]) {
         break;
       case ']':
         if (top == pcstack) err("Unmatched ']'");
+        top--;
         |  cmp  byte [PTR], 0
         |  jne  =>(*top-1)
         |=>(*top-2):
-        top--;
         break;
     }
   }
 
   // Function epilogue.
   |  pop  PTR
-  |  leave
   |  ret
 
-  void (*fptr)() = jitcode(&state);
-  fptr();
+  void (*fptr)(char*) = jitcode(&state);
+  char *mem = calloc(30000, 1);
+  fptr(mem);
+  free(mem);
   free_jitcode(fptr);
   return 0;
 }
