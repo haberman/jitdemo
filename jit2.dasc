@@ -1,0 +1,34 @@
+// Most basic DynASM JIT; generates a trivial function that
+// returns a given value, and executes it.
+
+|.arch x64
+|.actionlist actions
+
+int main(int argc, char *argv[]) {
+  if (argc < 2) {
+    fprintf(stderr, "Usage: jit1 <integer>\n");
+    return 1;
+  }
+
+  int num = atoi(argv[1]);
+  dasm_State *Dst = initjit(actions);
+
+  // Generate the code.  Each line appends to a buffer in
+  // "Dst", but the code in this buffer is not fully linked
+  // yet because labels can be referenced before they are
+  // defined.
+  |  mov eax, num
+  |  ret
+
+  // Link the code and emits it into the instruction buffer.
+  int (*fptr)() = jitcode(Dst);
+
+  // Call the JIT-ted function.
+  int ret = fptr();
+  assert(num == ret);
+
+  // Free the machine code.
+  free_jitcode(fptr);
+
+  return ret;
+}
