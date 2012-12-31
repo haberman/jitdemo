@@ -9,17 +9,15 @@
 #include "dynasm/dasm_proto.h"
 #include "dynasm/dasm_x86.h"
 
-dasm_State *initjit(const void *actionlist);
+void initjit(dasm_State **state, const void *actionlist);
 void *jitcode(dasm_State **state);
 void free_jitcode(void *code);
 
 #include JIT
 
-dasm_State *initjit(const void *actionlist) {
-  dasm_State *ret;
-  dasm_init(&ret, 1);
-  dasm_setup(&ret, actionlist);
-  return ret;
+void initjit(dasm_State **state, const void *actionlist) {
+  dasm_init(state, 1);
+  dasm_setup(state, actionlist);
 }
 
 void *jitcode(dasm_State **state) {
@@ -44,7 +42,7 @@ void *jitcode(dasm_State **state) {
 
   // Adjust the memory permissions so it is executable
   // but no longer writable.
-  int success = mprotect(ret, size, PROT_EXEC | PROT_READ);
+  int success = mprotect(mem, size, PROT_EXEC | PROT_READ);
   assert(success == 0);
 
 #ifndef NDEBUG
@@ -62,5 +60,7 @@ void *jitcode(dasm_State **state) {
 }
 
 void free_jitcode(void *code) {
-  munmap(code, *(size_t*)code);
+  void *mem = (char*)code - sizeof(size_t);
+  int status = munmap(mem, *(size_t*)mem);
+  assert(status == 0);
 }

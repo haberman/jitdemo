@@ -1,8 +1,20 @@
 // Most basic DynASM JIT; generates a trivial function that
 // returns a given value, and executes it.
 
+// DynASM directives.
 |.arch x64
 |.actionlist actions
+
+// This define affects "|" DynASM lines. For example, the line:
+//
+//   |  mov, eax, num
+//
+// ...will be replaced with something like:
+//
+//   dasm_put(Dst, 0, num);
+//
+// Dst must resolve to a dasm_State** that points to a dasm_State*.
+#define Dst &state
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -11,7 +23,8 @@ int main(int argc, char *argv[]) {
   }
 
   int num = atoi(argv[1]);
-  dasm_State *Dst = initjit(actions);
+  dasm_State *state;
+  initjit(&state, actions);
 
   // Generate the code.  Each line appends to a buffer in
   // "Dst", but the code in this buffer is not fully linked
@@ -20,8 +33,8 @@ int main(int argc, char *argv[]) {
   |  mov eax, num
   |  ret
 
-  // Link the code and emits it into the instruction buffer.
-  int (*fptr)() = jitcode(Dst);
+  // Link the code and write it to executable memory.
+  int (*fptr)() = jitcode(&state);
 
   // Call the JIT-ted function.
   int ret = fptr();
