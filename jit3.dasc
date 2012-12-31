@@ -1,0 +1,84 @@
+// JIT for Brainf*ck.
+
+|.arch x64
+|.actionlist actions
+|
+|// Use rbx as our cell pointer.
+|// Since rbx is a callee-save register, it will be preserved
+|// across our calls to getchar and putchar.
+|.define PTR, rbx
+
+#define Dst &state
+#define MAX_NESTING 256
+
+void err(const char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(1);
+}
+
+int main(int argc, char *argv[]) {
+  if (argc < 2) err("Usage: jit3 <bf program>");
+  dasm_State *state;
+  initjit(&state, actions);
+
+  unsigned int maxpc = 0;
+  int pcstack[MAX_NESTING];
+  int *top = pcstack, *limit = pcstack + MAX_NESTING;
+
+  // Function prologue.
+  |  push rbp
+  |  mov  rbp, rsp
+  |  push PTR
+  |  mov  PTR, rdi
+
+  for (char *p = argv[1]; *p; p++) {
+    switch (*p) {
+      case '>':
+        |  add  PTR, 1
+        break;
+      case '<':
+        |  sub  PTR, 1
+        break;
+      case '+':
+        |  add  byte [PTR], 1
+        break;
+      case '-':
+        |  sub  byte [PTR], 1
+        break;
+      case '.':
+        |  movzx esi, byte [PTR]
+        |  call  &putchar
+        break;
+      case ',':
+        |  call &getchar
+        |  mov  byte [PTR], al
+        break;
+      case '[':
+        if (top == limit) err("Nesting too deep.");
+        maxpc += 2;
+        *top++ = maxpc;
+        dasm_growpc(&state, maxpc);
+        |  cmp  byte [PTR], 0
+        |  je   =>(maxpc-2)
+        |=>(maxpc-1):
+        break;
+      case ']':
+        if (top == pcstack) err("Unmatched ']'");
+        |  cmp  byte [PTR], 0
+        |  jne  =>(*top-1)
+        |=>(*top-2):
+        top--;
+        break;
+    }
+  }
+
+  // Function epilogue.
+  |  pop  PTR
+  |  leave
+  |  ret
+
+  void (*fptr)() = jitcode(&state);
+  fptr();
+  free_jitcode(fptr);
+  return 0;
+}
