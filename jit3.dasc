@@ -57,16 +57,17 @@ int main(int argc, char *argv[]) {
         break;
       case '.':
         |  movzx edi, byte [PTR]
-        |  mov64 rax, (uintptr_t)putchar
-        |  call  rax
+        |  callp putchar
         break;
       case ',':
-        |  mov64 rax, (uintptr_t)getchar
-        |  call  rax
-        |  mov  byte [PTR], al
+        |  callp getchar
+        |  mov   byte [PTR], al
         break;
       case '[':
         if (top == limit) err("Nesting too deep.");
+        // Each loop gets two pclabels: at the beginning and end.
+        // We store pclabel offsets in a stack to link the loop
+        // begin and end together.
         maxpc += 2;
         *top++ = maxpc;
         dasm_growpc(&state, maxpc);
