@@ -29,7 +29,7 @@ void *jitcode(dasm_State **state) {
   // write the encoded instructions there.
   char *mem = mmap(NULL, size + sizeof(size_t),
 		   PROT_READ | PROT_WRITE,
-                   MAP_ANON | MAP_PRIVATE, 0, 0);
+                   MAP_ANON | MAP_PRIVATE, -1, 0);
   assert(mem != MAP_FAILED);
 
   // Store length at the beginning of the region, so we
