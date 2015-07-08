@@ -1,6 +1,4 @@
 // Driver file for DynASM-based JITs.
-//
-// This code is in the Public Domain.
 
 #include <assert.h>
 #include <stdio.h>

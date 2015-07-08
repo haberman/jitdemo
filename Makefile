@@ -1,5 +1,5 @@
 
-CFLAGS=-O3 -g -std=gnu99
+CFLAGS=-O3 -g -std=gnu99 -Ithird_party
 
 all: jit1 jit2 jit3
 
