@@ -1,6 +1,8 @@
 // Most basic DynASM JIT; generates a trivial function that
 // returns a given value, and executes it.
 
+#include "dynasm-driver.h"
+
 // DynASM directives.
 |.arch x64
 |.actionlist actions

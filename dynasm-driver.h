@@ -11,8 +11,6 @@ void initjit(dasm_State **state, const void *actionlist);
 void *jitcode(dasm_State **state);
 void free_jitcode(void *code);
 
-#include JIT
-
 void initjit(dasm_State **state, const void *actionlist) {
   dasm_init(state, 1);
   dasm_setup(state, actionlist);

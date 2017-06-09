@@ -1,16 +1,19 @@
 
-CFLAGS=-O3 -g -std=gnu99 -Ithird_party
+CFLAGS=-O3 -g -std=gnu99 -Ithird_party -D DASM_VERSION=10300
 
 all: jit1 jit2 jit3
 
 jit1: jit1.c
 
-jit2: dynasm-driver.c jit2.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o jit2 dynasm-driver.c -DJIT=\"jit2.h\"
-jit2.h: jit2.dasc
-	lua dynasm/dynasm.lua jit2.dasc > jit2.h
+jit2: dynasm-driver.h jit2.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) dynasm-driver.h jit2.c -o jit2
+jit2.c: jit2.dasc
+	lua third_party/dynasm/dynasm.lua jit2.dasc > jit2.c
 
-jit3: dynasm-driver.c jit3.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o jit3 dynasm-driver.c -DJIT=\"jit3.h\"
-jit3.h: jit3.dasc
-	lua dynasm/dynasm.lua jit3.dasc > jit3.h
+jit3: dynasm-driver.h jit3.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) dynasm-driver.h jit3.c -o jit3
+jit3.c: jit3.dasc
+	lua third_party/dynasm/dynasm.lua jit3.dasc > jit3.c
+
+clean:
+	rm -f jit1 jit2 jit3
