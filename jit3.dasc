@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "dynasm-driver.h"
+
 |.arch x64
 |.actionlist actions
 |
